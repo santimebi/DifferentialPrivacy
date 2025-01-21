@@ -1,0 +1,75 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+
+# Function to apply the Laplace mechanism
+def laplace_mechanism(data, sensitivity, epsilon):
+    """
+    Applies the Laplace mechanism to ensure differential privacy.
+
+    Parameters:
+    - data: array-like, input data.
+    - sensitivity: float, query sensitivity.
+    - epsilon: float, privacy parameter.
+
+    Returns:
+    - privatized result.
+    """
+    query_result = np.mean(data)
+    scale = sensitivity / epsilon
+    noise = np.random.laplace(0, scale)
+    privatized_result = query_result + noise
+    return privatized_result
+
+# Function to add noise to each data element
+def add_noise_to_data(data, sensitivity, epsilon):
+    """
+    Adds Laplace noise to each element of the data.
+
+    Parameters:
+    - data: array-like, input data.
+    - sensitivity: float, sensitivity of each element.
+    - epsilon: float, privacy parameter.
+
+    Returns:
+    - List of data with added noise.
+    """
+    scale = sensitivity / epsilon
+    noisy_data = data + np.random.laplace(0, scale, size=len(data))
+    noisy_data = np.round(noisy_data, 2)
+    return noisy_data
+
+# Simulated data
+# np.random.seed(42) # Fixed seed for reproducibility
+np.random.seed(int(time.time()))  # Variable seed for reproducibility
+data = np.random.randint(18, 80, size=50)  # Simulated ages of 50 individuals
+# Privacy and sensitivity parameters
+sensitivity = 1  # Sensitivity per element
+
+# Epsilon values to analyze privacy and utility
+epsilon_values = np.logspace(-1, 1, 50)  # From 0.1 to 10
+true_mean = np.mean(data)  # True mean of the data
+errors = []
+
+# Calculate errors for different epsilon values
+for epsilon in epsilon_values:
+    noisy_data = add_noise_to_data(data, sensitivity, epsilon)
+    noisy_mean = np.mean(noisy_data)
+    error = abs(noisy_mean - true_mean)
+    errors.append(error)
+    print("-----------------")
+    print(f"For epsilon: {epsilon}")
+    print(f"Original mean: {true_mean}")
+    print(f"Privatized mean: {noisy_mean}")
+    print("-----------------")
+
+# Plot utility vs privacy
+plt.figure(figsize=(10, 6))
+plt.plot(epsilon_values, errors, marker='o', label="Average error (Utility)")
+plt.xscale('log')
+plt.xlabel("Epsilon (Privacy level)")
+plt.ylabel("Average error (Difference from true mean)")
+plt.title("Impact of Epsilon on Privacy and Utility")
+plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+plt.legend()
+plt.show()
